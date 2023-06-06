@@ -1,0 +1,12 @@
+isDebug: true
+
+server:
+  host: 127.0.0.1
+  port: 8000
+
+url_repo:
+  file: ../../internal/repository/sites.txt
+  refresh: 60
+  timeout: 40
+
+
