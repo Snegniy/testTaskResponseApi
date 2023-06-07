@@ -25,7 +25,7 @@ func main() {
 	Register(router, h)
 
 	graceful.StartServer(router, log, cfg.Server.Host, cfg.Server.Port)
-	response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
+	response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh)
 }
 
 func Register(router *chi.Mux, h *handlers.Handlers) {
