@@ -33,6 +33,6 @@ func Register(router *chi.Mux, h handlers.Handlers) {
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
 	router.Get("/stat/url/{site}", h.GetSiteStat)
-	router.Get("/stat/min", h.GetRequestMinSitesStat)
-	router.Get("/stat/max", h.GetRequestMaxSitesStat)
+	router.Get("/stat/min", h.GetMinStat)
+	router.Get("/stat/max", h.GetMaxStat)
 }
