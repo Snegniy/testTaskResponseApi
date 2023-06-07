@@ -24,7 +24,7 @@ var path = "../config.yml"
 func NewConfig() Config {
 
 	log.Println("Read application configuration...")
-	config := Config{}
+	config := &Config{}
 
 	if err := cleanenv.ReadConfig(path, config); err != nil {
 		help, _ := cleanenv.GetDescription(config, nil)
@@ -33,5 +33,5 @@ func NewConfig() Config {
 	}
 	log.Println("Get configuration - OK!")
 
-	return config
+	return *config
 }
