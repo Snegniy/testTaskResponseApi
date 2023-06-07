@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
-	"go.uber.org/zap"
+	"log"
 )
 
 type Config struct {
@@ -21,17 +21,17 @@ type Config struct {
 
 var path = "../config.yml"
 
-func NewConfig(log *zap.Logger) Config {
+func NewConfig() Config {
 
-	log.Debug("Read application configuration...")
+	log.Println("Read application configuration...")
 	config := Config{}
 
 	if err := cleanenv.ReadConfig(path, config); err != nil {
 		help, _ := cleanenv.GetDescription(config, nil)
-		log.Info(help)
+		log.Println(help)
 		log.Fatal(fmt.Sprintf("%s", err))
 	}
-	log.Debug("Get configuration - OK!")
+	log.Println("Get configuration - OK!")
 
 	return config
 }
