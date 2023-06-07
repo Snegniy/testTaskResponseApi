@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/Snegniy/testTaskResponseApi/internal/config"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"go.uber.org/zap"
 	"os"
@@ -20,24 +19,24 @@ type UrlRepository struct {
 	RepoMinMax model.MinMaxStat
 }
 
-func NewRepository(log *zap.Logger, cfg *config.Config) *UrlRepository {
+func NewRepository(log *zap.Logger, file string) *UrlRepository {
 	log.Debug("Register repository...")
-	url := initData(log, cfg.UrlRepo.SitesFile)
+	url := initData(log, file)
 	return url
 }
 
-func initData(log *zap.Logger, f string) *UrlRepository {
-	file, err := os.Open(f)
+func initData(log *zap.Logger, file string) *UrlRepository {
+	f, err := os.Open(file)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("%v", err))
 	}
-	defer file.Close()
+	defer f.Close()
 
 	sites := map[string]model.SiteResponse{}
 	sitesCount := map[string]model.SiteCount{}
 
 	log.Debug("Read sites list..")
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		site := scanner.Text()
 		sites[site] = model.SiteResponse{}
@@ -73,3 +72,5 @@ func (u *UrlRepository) AddCount(r Repository) (*UrlRepository, error) {
 func (u *UrlRepository) GetMinMaxSite(m string) (float64, string, error) {
 	return 0.0, "", nil
 }
+
+//getSites

@@ -5,7 +5,7 @@ server:
   port: 8000
 
 url_repo:
-  file: ../../internal/repository/sites.txt
+  file: ../sites.txt
   refresh: 60
   timeout: 40
 
