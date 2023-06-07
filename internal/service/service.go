@@ -10,6 +10,7 @@ import (
 type Service struct {
 	log  *zap.Logger
 	repo *repository.UrlRepository
+	Services
 }
 
 var (
@@ -28,7 +29,9 @@ type Services interface {
 
 func NewService(log *zap.Logger, repo *repository.UrlRepository) *Service {
 	log.Debug("Register service...")
-	return &Service{log, repo}
+	return &Service{
+		log:  log,
+		repo: repo}
 }
 
 func (s Service) GetSiteInfo(site string) (model.SiteResponseInfo, error) {
