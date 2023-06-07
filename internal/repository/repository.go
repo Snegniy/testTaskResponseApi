@@ -22,56 +22,60 @@ type UrlRepository struct {
 func NewRepository(log *zap.Logger, file string) *UrlRepository {
 	log.Debug("Register repository...")
 	log.Debug("Read sites list..")
-	sites, err := initData(file)
+	sitesInfo, sitesName, err := initData(file)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("%v", err))
 	}
 
 	return &UrlRepository{
-		RepoSiteName:  sites,
-		RepoSiteCount: make([]atomic.Uint64, len(sites)),
+		RepoSiteInfo:  sitesInfo,
+		RepoSiteName:  sitesName,
+		RepoSiteCount: make([]atomic.Uint64, len(sitesName)),
 		log:           log,
 	}
 }
 
-func initData(file string) (map[string]int, error) {
+func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	list := strings.Split(string(b), "\r\n") // win - \r\n ; unix - \n ; mac - \r
-	m := make(map[string]int, len(list))
+	mInfo := make(map[string]model.SiteResponseInfo, len(list))
+	mName := make(map[string]int, len(list))
+
 	for _, v := range list {
-		m[v] = len(m)
+		mName[v] = len(mName)
+		mInfo[v] = model.SiteResponseInfo{}
 	}
-	return m, nil
+	return mInfo, mName, nil
 }
 
 func (u *UrlRepository) ReadSiteInfo(s string) (model.SiteResponseInfo, error) {
 	u.log.Debug(fmt.Sprintf("Read site info %s from repository", s))
-	output, ok := u.RepoSiteInfo[s]
+	result, ok := u.RepoSiteInfo[s]
 	if !ok {
 		return model.SiteResponseInfo{}, errors.New("incorrect site requested")
 	}
-	return output, nil
+	return result, nil
 }
 
 func (u *UrlRepository) ReadMinResponseSite() (model.SiteResponseInfo, error) {
-	u.log.Debug("Get Min Response Site From Repository")
+	u.log.Debug("Read Min Response Site From Repository")
 	key := u.RepoSiteMinMaxInfo.MinName
 	result, err := u.ReadSiteInfo(key)
 	return result, err
 }
 
 func (u *UrlRepository) ReadMaxResponseSite() (model.SiteResponseInfo, error) {
-	u.log.Debug("Get Max Response Site From Repository")
+	u.log.Debug("Read Max Response Site From Repository")
 	key := u.RepoSiteMinMaxInfo.MaxName
 	result, err := u.ReadSiteInfo(key)
 	return result, err
 }
 
-func (u *UrlRepository) GetCountSiteRequest(s string) (uint64, error) {
+func (u *UrlRepository) ReadCountSiteRequest(s string) (uint64, error) {
 	u.log.Debug(fmt.Sprintf("Read site count requests %s from repository", s))
 	key, ok := u.RepoSiteName[s]
 	if !ok {
@@ -80,14 +84,14 @@ func (u *UrlRepository) GetCountSiteRequest(s string) (uint64, error) {
 	return u.RepoSiteCount[key].Load(), nil
 }
 
-func (u *UrlRepository) GetCountMaxRequest() uint64 {
-	u.log.Debug("Get Max count request to Repository")
-	return *u.RepoSiteMinMaxStat.MaxCount
+func (u *UrlRepository) ReadCountMinRequest() uint64 {
+	u.log.Debug("Read Max count request to Repository")
+	return *u.RepoSiteMinMaxStat.MinCount
 }
 
-func (u *UrlRepository) GetCountMinRequest() uint64 {
-	u.log.Debug("Get Max count request to Repository")
-	return *u.RepoSiteMinMaxStat.MinCount
+func (u *UrlRepository) ReadCountMaxRequest() uint64 {
+	u.log.Debug("Read Max count request to Repository")
+	return *u.RepoSiteMinMaxStat.MaxCount
 }
 
 func (u *UrlRepository) WriteCountSiteRequest(s string) {
@@ -96,12 +100,12 @@ func (u *UrlRepository) WriteCountSiteRequest(s string) {
 	u.RepoSiteCount[key].Add(1)
 }
 
-func (u *UrlRepository) WriteCountMaxRequest() {
-	u.log.Debug("Write Max count request to Repository")
-	atomic.AddUint64(u.RepoSiteMinMaxStat.MaxCount, 1)
-}
-
 func (u *UrlRepository) WriteCountMinRequest() {
 	u.log.Debug("Write Min count request to Repository")
 	atomic.AddUint64(u.RepoSiteMinMaxStat.MinCount, 1)
+}
+
+func (u *UrlRepository) WriteCountMaxRequest() {
+	u.log.Debug("Write Max count request to Repository")
+	atomic.AddUint64(u.RepoSiteMinMaxStat.MaxCount, 1)
 }
