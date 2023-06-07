@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"github.com/Snegniy/testTaskResponseApi/internal/repository"
 	"go.uber.org/zap"
 )
@@ -10,10 +12,18 @@ type Service struct {
 	repo *repository.UrlRepository
 }
 
+var (
+	siteNotLoad    = errors.New("site data not loaded. Please wait")
+	siteNotConnect = errors.New("site is unavailable")
+)
+
 type Services interface {
-	ReadSite(site string) (float64, error)
-	//AddCount(r Repository) (*UrlRepository, error)
-	GetMinMaxSite(m string) (float64, string, error)
+	ReadSiteInfo(s string) (model.SiteResponseInfo, error)
+	ReadMinResponseSite() (model.SiteResponseInfo, error)
+	ReadMaxResponseSite() (model.SiteResponseInfo, error)
+	ReadCountSiteRequest(s string) (uint64, error)
+	ReadCountMaxRequest() uint64
+	ReadCountMinRequest() uint64
 }
 
 func NewService(log *zap.Logger, repo *repository.UrlRepository) *Service {
@@ -21,30 +31,63 @@ func NewService(log *zap.Logger, repo *repository.UrlRepository) *Service {
 	return &Service{log, repo}
 }
 
-func (s Service) GetSite(site string) (float64, error) {
+func (s Service) GetSiteInfo(site string) (model.SiteResponseInfo, error) {
+	s.log.Debug("Get Site response...")
+	result, err := s.repo.ReadSiteInfo(site)
+	if err != nil {
+		return result, err
+	}
+	if result.ResponseTime == 0.0 {
+		if result.Code == 0 {
+			return result, siteNotLoad
+		}
+		if result.Code != 200 {
+			return result, siteNotConnect
+		}
+	}
+	return result, nil
+}
+
+func (s Service) GetSiteMinResponse() (model.SiteResponseInfo, error) {
 	s.log.Debug("Get Min Site response...")
-	time, err := s.repo.ReadSite(site)
+	result, _ := s.repo.ReadMinResponseSite()
+	if result.Code == 0 {
+		return result, siteNotLoad
+	}
+	if result.Code != 200 {
+		return result, siteNotConnect
+	}
+
+	return result, nil
+}
+
+func (s Service) GetSiteMaxResponse() (model.SiteResponseInfo, error) {
+	s.log.Debug("Get Max Site response...")
+	result, _ := s.repo.ReadMaxResponseSite()
+	if result.Code == 0 {
+		return result, siteNotLoad
+	}
+	if result.Code != 200 {
+		return result, siteNotConnect
+	}
+	return result, nil
+}
+
+func (s Service) GetSiteStat(site string) (uint64, error) {
+	s.log.Debug("Get Site stat...")
+	result, err := s.repo.ReadCountSiteRequest(site)
 	if err != nil {
 		return 0, err
 	}
-	return time, nil
+	return result, nil
 }
 
-func (s Service) GetMin() (float64, string, error) {
-	s.log.Debug("Get Min Site response...")
-	time, site, err := s.repo.GetMinMaxSite("min")
-	if err != nil {
-		return 0, "", err
-	}
-	return time, site, nil
+func (s Service) GetMinStat() uint64 {
+	s.log.Debug("Get Min Site stat...")
+	return s.repo.ReadCountMinRequest()
 }
 
-func (s Service) GetMax() (float64, string, error) {
-	s.log.Debug("Get Min Site response...")
-	return 0, "", nil
-}
-
-func (s Service) GetStat() (float64, string, error) {
-	s.log.Debug("Get Min Site response...")
-	return 0, "", nil
+func (s Service) GetMaxStat() uint64 {
+	s.log.Debug("Get Max Site stat...")
+	return s.repo.ReadCountMaxRequest()
 }
