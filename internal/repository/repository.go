@@ -7,6 +7,7 @@ import (
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"go.uber.org/zap"
 	"os"
+	"sync/atomic"
 )
 
 type Repository interface {
@@ -14,9 +15,12 @@ type Repository interface {
 }
 
 type UrlRepository struct {
-	RepoSite   map[string]model.SiteResponse
-	RepoCount  map[string]model.SiteCount
-	RepoMinMax model.MinMaxStat
+	RepoSiteInfo       map[string]model.SiteResponseInfo
+	RepoSiteName       map[string]int
+	RepoSiteCount      []atomic.Uint64
+	RepoSiteMinMaxInfo *model.SiteMinMaxInfo
+	RepoSiteMinMaxStat *model.SiteMinMaxStat
+	log                *zap.Logger
 }
 
 func NewRepository(log *zap.Logger, file string) *UrlRepository {
@@ -32,45 +36,93 @@ func initData(log *zap.Logger, file string) *UrlRepository {
 	}
 	defer f.Close()
 
-	sites := map[string]model.SiteResponse{}
-	sitesCount := map[string]model.SiteCount{}
+	sites := map[string]model.SiteResponseInfo{}
+	sitesName := map[string]int{}
 
 	log.Debug("Read sites list..")
 	scanner := bufio.NewScanner(f)
+	i := 0
+
 	for scanner.Scan() {
 		site := scanner.Text()
-		sites[site] = model.SiteResponse{}
-		sitesCount[site] = model.SiteCount{}
+		sites[site] = model.SiteResponseInfo{}
+		sitesName[site] = i
+		i++
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(fmt.Sprintf("%v", err))
 	}
-	return &UrlRepository{RepoSite: sites, RepoCount: sitesCount, RepoMinMax: model.MinMaxStat{}}
+
+	minMaxInfo := &model.SiteMinMaxInfo{}
+	minMaxStat := &model.SiteMinMaxStat{}
+	siteCount := make([]atomic.Uint64, len(sites))
+
+	return &UrlRepository{sites, sitesName, siteCount, minMaxInfo, minMaxStat, log}
 }
 
-func (u *UrlRepository) ReadSite(site string) (float64, error) {
-	_, ok := u.RepoSite[site]
+func (u *UrlRepository) ReadSiteInfo(s string) (model.SiteResponseInfo, error) {
+	u.log.Debug(fmt.Sprintf("Read site info %s from repository", s))
+	output, ok := u.RepoSiteInfo[s]
 	if !ok {
-		return 0.0, errors.New("incorrect site requested")
+		return model.SiteResponseInfo{}, errors.New("incorrect site requested")
 	}
 
-	time := u.RepoSite[site].Response
+	time := u.RepoSiteInfo[s].ResponseTime
 	if time == 0.0 {
-		if u.RepoSite[site].Code == 0 {
-			return 0.0, errors.New("site data not loaded. Please wait")
+		if u.RepoSiteInfo[s].Code == 0 {
+			return model.SiteResponseInfo{}, errors.New("site data not loaded. Please wait")
 		}
-		return 0.0, errors.New("site is unavailable")
+		return model.SiteResponseInfo{}, errors.New("site is unavailable")
 	}
-	return time, nil
+	return output, nil
 }
 
-func (u *UrlRepository) AddCount(r Repository) (*UrlRepository, error) {
-	return u, nil
+func (u *UrlRepository) ReadMinResponseSite() (model.SiteResponseInfo, error) {
+	u.log.Debug("Get Min Response Site From Repository")
+	key := u.RepoSiteMinMaxInfo.MinName
+	result, err := u.ReadSiteInfo(key)
+	return result, err
 }
 
-func (u *UrlRepository) GetMinMaxSite(m string) (float64, string, error) {
-	return 0.0, "", nil
+func (u *UrlRepository) ReadMaxResponseSite() (model.SiteResponseInfo, error) {
+	u.log.Debug("Get Max Response Site From Repository")
+	key := u.RepoSiteMinMaxInfo.MaxName
+	result, err := u.ReadSiteInfo(key)
+	return result, err
 }
 
-//getSites
+func (u *UrlRepository) GetCountSiteRequest(s string) (uint64, error) {
+	u.log.Debug(fmt.Sprintf("Read site count requests %s from repository", s))
+	key, ok := u.RepoSiteName[s]
+	if !ok {
+		return 0, errors.New("incorrect site requested")
+	}
+	return u.RepoSiteCount[key].Load(), nil
+}
+
+func (u *UrlRepository) GetCountMaxRequest() uint64 {
+	u.log.Debug("Get Max count request to Repository")
+	return u.RepoSiteMinMaxStat.MaxCount.Load()
+}
+
+func (u *UrlRepository) GetCountMinRequest() uint64 {
+	u.log.Debug("Get Max count request to Repository")
+	return u.RepoSiteMinMaxStat.MinCount.Load()
+}
+
+func (u *UrlRepository) WriteCountSiteRequest(s string) {
+	u.log.Debug(fmt.Sprintf("Write count site %s request to Repository", s))
+	key := u.RepoSiteName[s]
+	u.RepoSiteCount[key].Add(1)
+}
+
+func (u *UrlRepository) WriteCountMaxRequest() {
+	u.log.Debug("Write Max count request to Repository")
+	u.RepoSiteMinMaxStat.MaxCount.Add(1)
+}
+
+func (u *UrlRepository) WriteCountMinRequest() {
+	u.log.Debug("Write Min count request to Repository")
+	u.RepoSiteMinMaxStat.MinCount.Add(1)
+}

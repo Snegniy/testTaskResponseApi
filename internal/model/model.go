@@ -1,21 +1,19 @@
 package model
 
-import (
-	"sync/atomic"
-)
+import "sync/atomic"
 
-type SiteResponse struct {
-	Response float64
-	Code     int
+type SiteResponseInfo struct {
+	SiteName     string  `json:"site_name"`
+	ResponseTime float64 `json:"response_time"`
+	Code         int     `json:"code"`
 }
 
-type SiteCount struct {
-	Count atomic.Uint64
+type SiteMinMaxInfo struct {
+	MinName string
+	MaxName string
 }
 
-type MinMaxStat struct {
+type SiteMinMaxStat struct {
 	MinCount atomic.Uint64
 	MaxCount atomic.Uint64
-	MinName  string
-	MaxName  string
 }
