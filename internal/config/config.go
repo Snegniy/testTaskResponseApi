@@ -21,17 +21,17 @@ type Config struct {
 
 var path = "../config.yml"
 
-func NewConfig(log *zap.Logger) *Config {
+func NewConfig(log *zap.Logger) Config {
 
 	log.Debug("Read application configuration...")
-	instance := &Config{}
+	config := Config{}
 
-	if err := cleanenv.ReadConfig(path, instance); err != nil {
-		help, _ := cleanenv.GetDescription(instance, nil)
+	if err := cleanenv.ReadConfig(path, config); err != nil {
+		help, _ := cleanenv.GetDescription(config, nil)
 		log.Info(help)
 		log.Fatal(fmt.Sprintf("%s", err))
 	}
 	log.Debug("Get configuration - OK!")
 
-	return instance
+	return config
 }
