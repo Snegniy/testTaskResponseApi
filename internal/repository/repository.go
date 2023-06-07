@@ -1,64 +1,51 @@
 package repository
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"go.uber.org/zap"
 	"os"
+	"strings"
 	"sync/atomic"
 )
-
-type Repository interface {
-	ReadSite(u *UrlRepository) (string, error)
-}
 
 type UrlRepository struct {
 	RepoSiteInfo       map[string]model.SiteResponseInfo
 	RepoSiteName       map[string]int
 	RepoSiteCount      []atomic.Uint64
-	RepoSiteMinMaxInfo *model.SiteMinMaxInfo
-	RepoSiteMinMaxStat *model.SiteMinMaxStat
+	RepoSiteMinMaxInfo model.SiteMinMaxInfo
+	RepoSiteMinMaxStat model.SiteMinMaxStat
 	log                *zap.Logger
 }
 
 func NewRepository(log *zap.Logger, file string) *UrlRepository {
 	log.Debug("Register repository...")
-	url := initData(log, file)
-	return url
-}
-
-func initData(log *zap.Logger, file string) *UrlRepository {
-	f, err := os.Open(file)
+	log.Debug("Read sites list..")
+	sites, err := initData(file)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("%v", err))
 	}
-	defer f.Close()
 
-	sites := map[string]model.SiteResponseInfo{}
-	sitesName := map[string]int{}
+	return &UrlRepository{
+		RepoSiteName:  sites,
+		RepoSiteCount: make([]atomic.Uint64, len(sites)),
+		log:           log,
+	}
+}
 
-	log.Debug("Read sites list..")
-	scanner := bufio.NewScanner(f)
-	i := 0
-
-	for scanner.Scan() {
-		site := scanner.Text()
-		sites[site] = model.SiteResponseInfo{}
-		sitesName[site] = i
-		i++
+func initData(file string) (map[string]int, error) {
+	b, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(fmt.Sprintf("%v", err))
+	list := strings.Split(string(b), "\r\n") // win - \r\n ; unix - \n ; mac - \r
+	m := make(map[string]int, len(list))
+	for _, v := range list {
+		m[v] = len(m)
 	}
-
-	minMaxInfo := &model.SiteMinMaxInfo{}
-	minMaxStat := &model.SiteMinMaxStat{}
-	siteCount := make([]atomic.Uint64, len(sites))
-
-	return &UrlRepository{sites, sitesName, siteCount, minMaxInfo, minMaxStat, log}
+	return m, nil
 }
 
 func (u *UrlRepository) ReadSiteInfo(s string) (model.SiteResponseInfo, error) {
@@ -66,14 +53,6 @@ func (u *UrlRepository) ReadSiteInfo(s string) (model.SiteResponseInfo, error) {
 	output, ok := u.RepoSiteInfo[s]
 	if !ok {
 		return model.SiteResponseInfo{}, errors.New("incorrect site requested")
-	}
-
-	time := u.RepoSiteInfo[s].ResponseTime
-	if time == 0.0 {
-		if u.RepoSiteInfo[s].Code == 0 {
-			return model.SiteResponseInfo{}, errors.New("site data not loaded. Please wait")
-		}
-		return model.SiteResponseInfo{}, errors.New("site is unavailable")
 	}
 	return output, nil
 }
@@ -103,12 +82,12 @@ func (u *UrlRepository) GetCountSiteRequest(s string) (uint64, error) {
 
 func (u *UrlRepository) GetCountMaxRequest() uint64 {
 	u.log.Debug("Get Max count request to Repository")
-	return u.RepoSiteMinMaxStat.MaxCount.Load()
+	return *u.RepoSiteMinMaxStat.MaxCount
 }
 
 func (u *UrlRepository) GetCountMinRequest() uint64 {
 	u.log.Debug("Get Max count request to Repository")
-	return u.RepoSiteMinMaxStat.MinCount.Load()
+	return *u.RepoSiteMinMaxStat.MinCount
 }
 
 func (u *UrlRepository) WriteCountSiteRequest(s string) {
@@ -119,10 +98,10 @@ func (u *UrlRepository) WriteCountSiteRequest(s string) {
 
 func (u *UrlRepository) WriteCountMaxRequest() {
 	u.log.Debug("Write Max count request to Repository")
-	u.RepoSiteMinMaxStat.MaxCount.Add(1)
+	atomic.AddUint64(u.RepoSiteMinMaxStat.MaxCount, 1)
 }
 
 func (u *UrlRepository) WriteCountMinRequest() {
 	u.log.Debug("Write Min count request to Repository")
-	u.RepoSiteMinMaxStat.MinCount.Add(1)
+	atomic.AddUint64(u.RepoSiteMinMaxStat.MinCount, 1)
 }
