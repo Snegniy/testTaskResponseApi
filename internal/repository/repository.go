@@ -28,12 +28,10 @@ func NewRepository(log *zap.Logger, file string) *UrlRepository {
 	}
 
 	return &UrlRepository{
-		RepoSiteInfo:       sitesInfo,
-		RepoSiteName:       sitesName,
-		RepoSiteCount:      make([]atomic.Uint64, len(sitesName)),
-		RepoSiteMinMaxInfo: model.SiteMinMaxInfo{},
-		RepoSiteMinMaxStat: model.SiteMinMaxStat{},
-		log:                log,
+		RepoSiteInfo:  sitesInfo,
+		RepoSiteName:  sitesName,
+		RepoSiteCount: make([]atomic.Uint64, len(sitesName)),
+		log:           log,
 	}
 }
 
