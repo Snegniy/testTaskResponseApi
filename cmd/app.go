@@ -28,7 +28,7 @@ func main() {
 	response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh)
 }
 
-func Register(router *chi.Mux, h *handlers.Handlers) {
+func Register(router *chi.Mux, h handlers.Handlers) {
 	router.Get("/url/{site}", h.GetSiteResponse)
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
