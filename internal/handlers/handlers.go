@@ -2,59 +2,102 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"github.com/Snegniy/testTaskResponseApi/internal/service"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type Hand struct {
+type Handlers struct {
 	log     *zap.Logger
 	service *service.Service
+	srv     Services
 }
 
-func NewHandler(log *zap.Logger, s *service.Service) *Hand {
+type outputStat struct {
+	SiteName string `json:"site_name"`
+	Count    uint64 `json:"count_requests"`
+}
+
+type outputError struct {
+	SiteName string `json:"site_name"`
+	Error    string `json:"error"`
+}
+
+type Services interface {
+	GetSiteInfo(site string) (model.SiteResponseInfo, error)
+	GetSiteMinResponse() (model.SiteResponseInfo, error)
+	GetSiteMaxResponse() (model.SiteResponseInfo, error)
+	GetSiteStat(site string) (uint64, error)
+	GetMinStat() uint64
+	GetMaxStat() uint64
+}
+
+func NewHandlers(log *zap.Logger, s *service.Service) Handlers {
 	log.Debug("Register user handler...")
-	return &Hand{log, s}
+	return Handlers{
+		log:     log,
+		service: s,
+	}
 }
 
-func (h *Hand) GetSiteResponse(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetSiteResponse(w http.ResponseWriter, r *http.Request) {
 	site := chi.URLParam(r, "site")
-	h.log.Debug(fmt.Sprintf("Get Site response %s ...", site))
-	time, err := h.service.GetSite(site)
+	h.log.Debug(fmt.Sprintf("Get site %s response...", site))
+	res, err := h.service.GetSiteInfo(site)
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("%s", err)))
+		writeErrorJSON(w, outputError{site, fmt.Sprintf("%s", err)})
 	} else {
-		w.Write([]byte(fmt.Sprintf("Response time for %s: for %v", site, time)))
+		writeInfoJSON(w, res)
 	}
+	h.log.Debug(fmt.Sprintf("Get site %s response - OK!!", site))
 }
 
-func (h *Hand) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Min Site response...")
-	time, site, err := h.service.GetMin()
+func (h *Handlers) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
+	h.log.Debug("Get Min site response...")
+	res, err := h.service.GetSiteMinResponse()
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("%s", err)))
+		writeErrorJSON(w, outputError{res.SiteName, fmt.Sprintf("%s", err)})
 	} else {
-		w.Write([]byte(fmt.Sprintf("Minimal time response: %v for %s", time, site)))
+		writeInfoJSON(w, res)
 	}
+	h.log.Debug("Get Min site response - OK!")
 }
 
-func (h *Hand) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Max Site response...")
-	time, site, err := h.service.GetMax()
+func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
+	h.log.Debug("Get Max site response...")
+	res, err := h.service.GetSiteMaxResponse()
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("%s", err)))
+		writeErrorJSON(w, outputError{res.SiteName, fmt.Sprintf("%s", err)})
 	} else {
-		w.Write([]byte(fmt.Sprintf("Maximum time response: %v for %s", time, site)))
+		writeInfoJSON(w, res)
 	}
+	h.log.Debug("Get Max site response - OK!")
 }
 
-func (h *Hand) GetRequestSitesStat(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Stat for admin...")
-	time, site, err := h.service.GetStat()
+func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
+	site := chi.URLParam(r, "site")
+	h.log.Debug(fmt.Sprintf("Get Stat count requests site %s for admin...", site))
+	res, err := h.service.GetSiteStat(site)
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("%s", err)))
+		writeErrorJSON(w, outputError{site, fmt.Sprintf("%s", err)})
 	} else {
-		w.Write([]byte(fmt.Sprintf("Count stat: %v for %s", time, site)))
+		writeStatJSON(w, outputStat{site, res})
 	}
+	h.log.Debug(fmt.Sprintf("Get Stat count requests site %s for admin - OK!", site))
+}
+
+func (h *Handlers) GetMinStat(w http.ResponseWriter, r *http.Request) {
+	h.log.Debug("Get Min response count stat for admin...")
+	res := h.service.GetMinStat()
+	writeStatJSON(w, outputStat{"Min response request", res})
+	h.log.Debug("Get Min response count stat for admin - OK!")
+}
+
+func (h *Handlers) GetMaxStat(w http.ResponseWriter, r *http.Request) {
+	h.log.Debug("Get Max response count stat for admin...")
+	res := h.service.GetMinStat()
+	writeStatJSON(w, outputStat{"Max response request", res})
+	h.log.Debug("Get Max response count stat for admin - OK!")
 }
