@@ -30,7 +30,6 @@ func NewCheckResponse(timeout, refresh int) *Cache {
 
 func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
 	for {
-		_ = <-c.tick.C
 		for site := range r.RepoSiteInfo {
 			c.wg.Add(1)
 			site := site
@@ -63,7 +62,7 @@ func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
 		c.checkMinMax()
 		c.swapData(r)
 		log.Info("data updated")
-
+		_ = <-c.tick.C
 	}
 }
 
