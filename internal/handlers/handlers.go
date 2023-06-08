@@ -77,6 +77,7 @@ func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
+	//_, claims, _ := jwtauth.FromContext(r.Context())
 	site := chi.URLParam(r, "site")
 	h.log.Debug(fmt.Sprintf("Get Stat count requests site %s for admin...", site))
 	res, err := h.service.GetSiteStat(site)

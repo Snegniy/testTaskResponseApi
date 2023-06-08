@@ -3,12 +3,14 @@ package main
 import (
 	"github.com/Snegniy/testTaskResponseApi/internal/config"
 	"github.com/Snegniy/testTaskResponseApi/internal/handlers"
+	"github.com/Snegniy/testTaskResponseApi/internal/middleware"
 	"github.com/Snegniy/testTaskResponseApi/internal/repository"
 	"github.com/Snegniy/testTaskResponseApi/internal/response"
 	"github.com/Snegniy/testTaskResponseApi/internal/service"
 	"github.com/Snegniy/testTaskResponseApi/pkg/graceful"
 	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/jwtauth/v5"
 )
 
 func main() {
@@ -22,17 +24,25 @@ func main() {
 	s := service.NewService(log, r)
 	h := handlers.NewHandlers(log, s)
 
-	Register(router, h)
+	tokenAuth := middleware.NewJWT()
+	Register(router, h, tokenAuth)
 
 	graceful.StartServer(router, log, cfg.Server.Host, cfg.Server.Port)
 	response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh)
 }
 
-func Register(router *chi.Mux, h handlers.Handlers) {
+func Register(router *chi.Mux, h handlers.Handlers, t *jwtauth.JWTAuth) {
 	router.Get("/url/{site}", h.GetSiteResponse)
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
-	router.Get("/stat/url/{site}", h.GetSiteStat)
-	router.Get("/stat/min", h.GetMinStat)
-	router.Get("/stat/max", h.GetMaxStat)
+
+	router.Group(func(router chi.Router) {
+		router.Use(jwtauth.Verifier(t))
+		router.Use(jwtauth.Authenticator)
+
+		router.Get("/stat/url/{site}", h.GetSiteStat)
+		router.Get("/stat/min", h.GetMinStat)
+		router.Get("/stat/max", h.GetMaxStat)
+	})
+
 }
