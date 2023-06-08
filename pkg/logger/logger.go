@@ -8,18 +8,18 @@ import (
 
 var log *zap.Logger
 
-func NewLogger(mode bool) *zap.Logger {
+func NewLogger(mode string) *zap.Logger {
 	log = configLogger(mode)
 	log.Debug("Get logger - OK!")
 	return log
 }
 
-func configLogger(mode bool) *zap.Logger {
+func configLogger(mode string) *zap.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.RFC3339TimeEncoder
 	consoleEncoder := zapcore.NewConsoleEncoder(config)
 	defaultLogLevel := zapcore.DebugLevel
-	if mode == false {
+	if mode == "no" {
 		defaultLogLevel = zapcore.InfoLevel
 	}
 	core := zapcore.NewTee(

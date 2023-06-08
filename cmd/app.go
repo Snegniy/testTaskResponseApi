@@ -15,7 +15,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	log := logger.NewLogger(cfg.IsDebug)
+	log := logger.NewLogger(cfg.ModeWork.IsDebug)
 
 	log.Debug("Create router...")
 	router := chi.NewRouter()

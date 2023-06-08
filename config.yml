@@ -1,12 +1,13 @@
-isDebug: true
+workMode:
+  isDebug: no  # yes/no
 
 server:
   host: 127.0.0.1
-  port: 8000
+  port: 8100
 
 url_repo:
   file: ../sites.txt
-  refresh: 60
-  timeout: 40
+  refresh: 60 # seconds
+  timeout: 40 # seconds
 
 

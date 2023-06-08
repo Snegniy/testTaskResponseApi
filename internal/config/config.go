@@ -7,8 +7,10 @@ import (
 )
 
 type Config struct {
-	IsDebug bool `yaml:"isDebug" env-description:"Debug mode" env-default:"true"`
-	Server  struct {
+	ModeWork struct {
+		IsDebug string `yaml:"isDebug" env-description:"Debug mode" env-default:"yes"`
+	} `yaml:"workMode"`
+	Server struct {
 		Host string `yaml:"host" env-description:"Server host" env-default:"localhost"`
 		Port string `yaml:"port" env-description:"Server port" env-default:"8000"`
 	} `yaml:"server"`
@@ -23,7 +25,7 @@ var path = "../config.yml"
 
 func NewConfig() Config {
 
-	log.Println("Read application configuration...")
+	log.Println("\t\tRead application configuration...")
 	config := &Config{}
 
 	if err := cleanenv.ReadConfig(path, config); err != nil {
@@ -31,7 +33,7 @@ func NewConfig() Config {
 		log.Println(help)
 		log.Fatal(fmt.Sprintf("%s", err))
 	}
-	log.Println("Get configuration - OK!")
+	log.Println("\t\tGet configuration - OK!")
 
 	return *config
 }
