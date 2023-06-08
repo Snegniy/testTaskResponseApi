@@ -4,15 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
-	"github.com/Snegniy/testTaskResponseApi/internal/repository"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 type Service struct {
 	log  *zap.Logger
-	repo *repository.UrlRepository
-	r    Repository
+	repo Repository
 }
 
 var (
@@ -28,13 +26,17 @@ type Repository interface {
 	ReadCountSiteRequest(s string) (uint64, error)
 	ReadCountMaxRequest() uint64
 	ReadCountMinRequest() uint64
+	WriteCountSiteRequest(s string)
+	WriteCountMinRequest()
+	WriteCountMaxRequest()
 }
 
-func NewService(log *zap.Logger, repo *repository.UrlRepository) *Service {
+func NewService(log *zap.Logger, r Repository) *Service {
 	log.Debug("Register service...")
 	return &Service{
 		log:  log,
-		repo: repo}
+		repo: r,
+	}
 }
 
 func (s Service) GetSiteInfo(site string) (model.SiteResponseInfo, error) {

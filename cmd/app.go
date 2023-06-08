@@ -25,24 +25,24 @@ func main() {
 	h := handlers.NewHandlers(log, s)
 
 	tokenAuth := middleware.NewJWT()
-	Register(router, h, tokenAuth)
 
+	Register(router, h, tokenAuth, cfg.ModeWork.AuthAdmin)
+	go response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
 	graceful.StartServer(router, log, cfg.Server.Host, cfg.Server.Port)
-	response.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh)
 }
 
-func Register(router *chi.Mux, h handlers.Handlers, t *jwtauth.JWTAuth) {
+func Register(router *chi.Mux, h handlers.Handlers, t *jwtauth.JWTAuth, auth string) {
 	router.Get("/url/{site}", h.GetSiteResponse)
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
 
 	router.Group(func(router chi.Router) {
-		router.Use(jwtauth.Verifier(t))
-		router.Use(jwtauth.Authenticator)
-
+		if auth == "jwt" {
+			router.Use(jwtauth.Verifier(t))
+			router.Use(jwtauth.Authenticator)
+		}
 		router.Get("/stat/url/{site}", h.GetSiteStat)
 		router.Get("/stat/min", h.GetMinStat)
 		router.Get("/stat/max", h.GetMaxStat)
 	})
-
 }

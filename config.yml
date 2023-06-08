@@ -1,5 +1,6 @@
 workMode:
-  isDebug: no  # yes/no
+  isDebug: yes  # yes/no
+  authAdmin: no # no/jwt
 
 server:
   host: 127.0.0.1
@@ -8,6 +9,6 @@ server:
 url_repo:
   file: ../sites.txt
   refresh: 60 # seconds
-  timeout: 40 # seconds
+  timeout: 30 # seconds
 
 

@@ -8,7 +8,8 @@ import (
 
 type Config struct {
 	ModeWork struct {
-		IsDebug string `yaml:"isDebug" env-description:"Debug mode" env-default:"yes"`
+		IsDebug   string `yaml:"isDebug" env-description:"Debug mode" env-default:"yes"`
+		AuthAdmin string `yaml:"authAdmin" env-description:"Admin mode" env-default:"no"`
 	} `yaml:"workMode"`
 	Server struct {
 		Host string `yaml:"host" env-description:"Server host" env-default:"localhost"`

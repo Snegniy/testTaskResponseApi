@@ -46,6 +46,9 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 	mName := make(map[string]int, len(list))
 
 	for _, v := range list {
+		if v == "" {
+			continue
+		}
 		mName[v] = len(mName)
 		mInfo[v] = model.SiteResponseInfo{}
 	}

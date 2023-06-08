@@ -1,10 +1,12 @@
 package model
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type SiteResponseInfo struct {
-	SiteName     string  `json:"site_name"`
-	ResponseTime float64 `json:"response_time"`
+	SiteName     string `json:"site_name"`
+	ResponseTime int64  `json:"response_time(ms)"`
 	Code         int
 }
 
