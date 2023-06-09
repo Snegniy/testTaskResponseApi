@@ -75,6 +75,6 @@ func (h *Handlers) GetMinStat(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) GetMaxStat(w http.ResponseWriter, r *http.Request) {
 	h.log.Debug("Get Max response count stat for admin...")
-	res := h.srv.GetMinStat()
+	res := h.srv.GetMaxStat()
 	writeJSON(w, res)
 }

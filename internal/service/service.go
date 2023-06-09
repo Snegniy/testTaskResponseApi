@@ -39,9 +39,6 @@ type Repository interface {
 	ReadCountSiteRequest(s string) (uint64, error)
 	ReadCountMaxRequest() uint64
 	ReadCountMinRequest() uint64
-	WriteCountSiteRequest(s string)
-	WriteCountMinRequest()
-	WriteCountMaxRequest()
 }
 
 func NewService(log *zap.Logger, r Repository) *Service {

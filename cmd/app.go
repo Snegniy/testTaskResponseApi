@@ -24,21 +24,20 @@ func main() {
 	s := service.NewService(log, r)
 	h := handlers.NewHandlers(log, s)
 
-	tokenAuth := jwt.NewJWT()
-
-	Register(router, h, *tokenAuth, cfg.ModeWork.AuthAdmin)
+	Register(router, h, cfg.ModeWork.AuthAdmin)
 	go cronjob.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
 	graceful.StartServer(router, log, cfg.Server.HostPort)
 }
 
-func Register(router *chi.Mux, h handlers.Handlers, t jwtauth.JWTAuth, auth string) {
+func Register(router *chi.Mux, h handlers.Handlers, auth string) {
 	router.Get("/url/{site}", h.GetSiteResponse)
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
 
 	router.Group(func(router chi.Router) {
 		if auth == "jwt" {
-			router.Use(jwtauth.Verifier(&t))
+			tokenAuth := jwt.NewJWT()
+			router.Use(jwtauth.Verifier(tokenAuth))
 			router.Use(jwtauth.Authenticator)
 		}
 		router.Get("/stat/url/{site}", h.GetSiteStat)

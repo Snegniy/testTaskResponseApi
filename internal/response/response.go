@@ -37,10 +37,10 @@ func Response(db *repository.UrlRepository, timeout, refresh int, log *zap.Logge
 }
 
 func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
-	ch := make(chan model.SiteResponseInfo, 10)
-	go SetSite(ch, c, r)
-
 	for {
+		ch := make(chan model.SiteResponseInfo)
+		go SetSite(ch, c, r)
+
 		for site := range c.cacheName {
 			c.wg.Add(1)
 			go func(r *repository.UrlRepository, c *Cache, site string) {
@@ -64,21 +64,22 @@ func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
 			}(r, c, site)
 		}
 		c.wg.Wait()
+		close(ch)
 		log.Info("data updated")
-		_ = <-c.tick.C
+		<-c.tick.C
 	}
 }
 
 func SetSite(ch chan model.SiteResponseInfo, c *Cache, r *repository.UrlRepository) {
-	for {
-		cacheSite := make(map[string]model.SiteResponseInfo, len(c.cacheName))
-		for i := 0; i < len(c.cacheName); i++ {
-			m := <-ch
-			cacheSite[m.SiteName] = m
-		}
-		r.RepoSiteMinMaxInfo = c.checkMinMax(cacheSite)
-		r.RepoSiteInfo = cacheSite
+	cacheSite := make(map[string]model.SiteResponseInfo, len(c.cacheName))
+	for v := range ch {
+		fmt.Println(v)
+		cacheSite[v.SiteName] = v
 	}
+	fmt.Println(cacheSite)
+	r.RepoSiteMinMaxInfo = c.checkMinMax(cacheSite)
+	r.RepoSiteInfo = cacheSite
+
 }
 
 func (c *Cache) checkMinMax(cacheSite map[string]model.SiteResponseInfo) model.SiteMinMaxInfo {
