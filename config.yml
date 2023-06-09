@@ -1,5 +1,5 @@
 workMode:
-  isDebug: yes  # yes/no
+  isDebug: no  # yes/no
   authAdmin: no # no/jwt
 
 server:

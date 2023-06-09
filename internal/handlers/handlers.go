@@ -13,16 +13,6 @@ type Handlers struct {
 	srv Services
 }
 
-type outputStat struct {
-	SiteName string `json:"site_name"`
-	Count    uint64 `json:"count_requests"`
-}
-
-type outputError struct {
-	SiteName string `json:"site_name"`
-	Error    string `json:"error"`
-}
-
 type Services interface {
 	GetSiteInfo(site string) service.OutputUserInfo
 	GetSiteMinResponse() service.OutputUserInfo

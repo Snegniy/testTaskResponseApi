@@ -5,8 +5,8 @@ import (
 )
 
 type SiteResponseInfo struct {
-	SiteName     string `json:"site_name"`
-	ResponseTime int64  `json:"response_time(ms)"`
+	SiteName     string
+	ResponseTime int64
 	Code         int
 }
 

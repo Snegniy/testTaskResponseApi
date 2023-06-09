@@ -49,14 +49,18 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 		if v == "" {
 			continue
 		}
-		mName[v] = len(mName)
-		mInfo[v] = model.SiteResponseInfo{}
+		name := fmt.Sprintf("https://%s", v)
+		mInfo[v] = model.SiteResponseInfo{SiteName: v}
+		mName[name] = len(mName)
 	}
+	fmt.Println(mInfo)
+	fmt.Println(mName)
 	return mInfo, mName, nil
 }
 
 func (u *UrlRepository) ReadSiteInfo(s string) model.SiteResponseInfo {
 	u.log.Debug(fmt.Sprintf("Read site info %s from repository", s))
+
 	result, ok := u.RepoSiteInfo[s]
 	if !ok {
 		return model.SiteResponseInfo{

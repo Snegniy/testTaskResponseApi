@@ -59,9 +59,10 @@ func NewOutputUserInfo(m model.SiteResponseInfo) OutputUserInfo {
 	if m.Code == codeNotLoad {
 		out.ResponseTime = fmt.Sprintf("%v", siteNotLoad)
 	}
-	if m.Code != codeOK {
+	if m.Code > 0 && m.Code != codeOK {
 		out.ResponseTime = fmt.Sprintf("%v", siteNotConnect)
-	} else {
+	}
+	if m.Code == codeOK {
 		t := strconv.Itoa(m.Code)
 		out.ResponseTime = fmt.Sprintf("%sms", t)
 	}

@@ -4,7 +4,6 @@ import (
 	"github.com/Snegniy/testTaskResponseApi/internal/config"
 	"github.com/Snegniy/testTaskResponseApi/internal/handlers"
 	"github.com/Snegniy/testTaskResponseApi/internal/repository"
-	"github.com/Snegniy/testTaskResponseApi/internal/response"
 	"github.com/Snegniy/testTaskResponseApi/internal/service"
 	"github.com/Snegniy/testTaskResponseApi/pkg/graceful"
 	"github.com/Snegniy/testTaskResponseApi/pkg/jwt"
@@ -25,14 +24,14 @@ func main() {
 	h := handlers.NewHandlers(log, s)
 
 	Register(router, h, cfg.ModeWork.AuthAdmin)
-	go cronjob.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
+	//go cronjob.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
 	graceful.StartServer(router, log, cfg.Server.HostPort)
 }
 
 func Register(router *chi.Mux, h handlers.Handlers, auth string) {
-	router.Get("/url/{site}", h.GetSiteResponse)
 	router.Get("/min", h.GetMinSiteResponse)
 	router.Get("/max", h.GetMaxSiteResponse)
+	router.Get("/{site}", h.GetSiteResponse)
 
 	router.Group(func(router chi.Router) {
 		if auth == "jwt" {
@@ -40,8 +39,8 @@ func Register(router *chi.Mux, h handlers.Handlers, auth string) {
 			router.Use(jwtauth.Verifier(tokenAuth))
 			router.Use(jwtauth.Authenticator)
 		}
-		router.Get("/stat/url/{site}", h.GetSiteStat)
 		router.Get("/stat/min", h.GetMinStat)
 		router.Get("/stat/max", h.GetMaxStat)
+		router.Get("/stat/{site}", h.GetSiteStat)
 	})
 }
