@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"go.uber.org/zap"
-	"net/http"
+	"strconv"
 )
 
 type Service struct {
@@ -13,10 +13,23 @@ type Service struct {
 	repo Repository
 }
 
+type OutputUserInfo struct {
+	RequestName  string `json:"request_name"`
+	ResponseTime string `json:"response_time"`
+}
+
+type OutputAdminInfo struct {
+	RequestName  string `json:"request_name"`
+	RequestCount string `json:"request_count"`
+}
+
 var (
-	siteNotLoad        = errors.New("site data not loaded. Please wait")
-	siteNotConnect     = errors.New("site is unavailable")
-	siteNameNotCorrect = errors.New("incorrect site requested")
+	siteNotLoad        = errors.New("error: site data not loaded. Please wait")
+	siteNotConnect     = errors.New("error: site is unavailable")
+	siteNameNotCorrect = errors.New("error: incorrect site requested")
+	codeNotCorrectSite = -1
+	codeNotLoad        = 0
+	codeOK             = 200
 )
 
 type Repository interface {
@@ -39,64 +52,71 @@ func NewService(log *zap.Logger, r Repository) *Service {
 	}
 }
 
-func (s Service) GetSiteInfo(site string) (model.SiteResponseInfo, error) {
+func NewOutputUserInfo(m model.SiteResponseInfo) OutputUserInfo {
+	out := OutputUserInfo{
+		RequestName: m.SiteName,
+	}
+	if m.Code == codeNotCorrectSite {
+		out.ResponseTime = fmt.Sprintf("%v", siteNameNotCorrect)
+	}
+	if m.Code == codeNotLoad {
+		out.ResponseTime = fmt.Sprintf("%v", siteNotLoad)
+	}
+	if m.Code != codeOK {
+		out.ResponseTime = fmt.Sprintf("%v", siteNotConnect)
+	} else {
+		t := strconv.Itoa(m.Code)
+		out.ResponseTime = fmt.Sprintf("%sms", t)
+	}
+	return out
+}
+
+func (s Service) GetSiteInfo(site string) OutputUserInfo {
 	s.log.Debug("Get site response...")
 	result := s.repo.ReadSiteInfo(site)
-	if result.Code == -1 {
-		return result, siteNameNotCorrect
-	}
-	s.repo.WriteCountSiteRequest(site)
-
-	if result.Code == 0 {
-		return result, siteNotLoad
-	}
-	if result.Code != http.StatusOK {
-		return result, siteNotConnect
-	}
-	return result, nil
+	return NewOutputUserInfo(result)
 }
 
-func (s Service) GetSiteMinResponse() (model.SiteResponseInfo, error) {
+func (s Service) GetSiteMinResponse() OutputUserInfo {
 	s.log.Debug("Get Min site response...")
 	result := s.repo.ReadMinResponseSite()
-	s.repo.WriteCountMinRequest()
-	if result.Code == 0 {
-		return result, siteNotLoad
-	}
-	if result.Code != http.StatusOK {
-		return result, siteNotConnect
-	}
-	return result, nil
+	return NewOutputUserInfo(result)
 }
 
-func (s Service) GetSiteMaxResponse() (model.SiteResponseInfo, error) {
+func (s Service) GetSiteMaxResponse() OutputUserInfo {
 	s.log.Debug("Get Max site response...")
 	result := s.repo.ReadMaxResponseSite()
-	s.repo.WriteCountMaxRequest()
-	if result.Code == 0 {
-		return result, siteNotLoad
-	}
-	if result.Code != http.StatusOK {
-		return result, siteNotConnect
-	}
-	return result, nil
+	return NewOutputUserInfo(result)
 }
 
-func (s Service) GetSiteStat(site string) (uint64, error) {
+func (s Service) GetSiteStat(site string) OutputAdminInfo {
 	s.log.Debug(fmt.Sprintf("Get site %s stat...", site))
+
 	result, err := s.repo.ReadCountSiteRequest(site)
-	if err != nil {
-		return 0, err
+	c := strconv.Itoa(int(result))
+	out := OutputAdminInfo{
+		RequestName:  site,
+		RequestCount: c,
 	}
-	return result, nil
+	if err != nil {
+		out.RequestCount = fmt.Sprintf("%v", siteNameNotCorrect)
+	}
+	return out
 }
 
-func (s Service) GetMinStat() uint64 {
+func (s Service) GetMinStat() OutputAdminInfo {
 	s.log.Debug("Get Min site stat...")
-	return s.repo.ReadCountMinRequest()
+
+	return OutputAdminInfo{
+		RequestName:  "Min response Endpoint requests",
+		RequestCount: strconv.Itoa(int(s.repo.ReadCountMinRequest())),
+	}
 }
 
-func (s Service) GetMaxStat() uint64 {
+func (s Service) GetMaxStat() OutputAdminInfo {
 	s.log.Debug("Get Max site stat...")
-	return s.repo.ReadCountMaxRequest()
+	return OutputAdminInfo{
+		RequestName:  "Max response Endpoint requests",
+		RequestCount: strconv.Itoa(int(s.repo.ReadCountMaxRequest())),
+	}
 }

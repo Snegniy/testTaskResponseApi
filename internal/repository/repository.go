@@ -102,8 +102,7 @@ func (u *UrlRepository) ReadCountMaxRequest() uint64 {
 
 func (u *UrlRepository) WriteCountSiteRequest(s string) {
 	u.log.Debug(fmt.Sprintf("Write count site %s request to repository", s))
-	key, ok := u.RepoSiteName[s]
-	if ok {
+	if key, ok := u.RepoSiteName[s]; ok {
 		u.RepoSiteCount[key].Add(1)
 	}
 }

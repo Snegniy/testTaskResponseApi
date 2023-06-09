@@ -1,4 +1,4 @@
-package response
+package cronjob
 
 import (
 	"fmt"
@@ -12,87 +12,87 @@ import (
 )
 
 type Cache struct {
-	cacheSite   map[string]model.SiteResponseInfo
-	cacheMinMax model.SiteMinMaxInfo
-	tick        *time.Ticker
-	wg          sync.WaitGroup
-	client      http.Client
-	mu          sync.Mutex
+	cacheName map[string]string
+	tick      *time.Ticker
+	wg        sync.WaitGroup
+	client    http.Client
 }
 
-func NewCheckResponse(timeout, refresh int) *Cache {
+func NewCheckResponse(timeout, refresh int, db *repository.UrlRepository) *Cache {
+	name := make(map[string]string, len(db.RepoSiteName))
+	for key := range db.RepoSiteName {
+		name[key] = fmt.Sprintf("https://%s", key)
+	}
 	return &Cache{
-		cacheSite: map[string]model.SiteResponseInfo{},
+		cacheName: name,
 		tick:      time.NewTicker(time.Duration(refresh) * time.Second),
 		client:    http.Client{Timeout: time.Duration(timeout) * time.Second},
 	}
 }
 
+func Response(db *repository.UrlRepository, timeout, refresh int, log *zap.Logger) {
+	c := NewCheckResponse(timeout, refresh, db)
+	log.Debug("Starting CheckResponse...")
+	loopCheckSite(db, c, log)
+}
+
 func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
+	ch := make(chan model.SiteResponseInfo, 10)
+	go SetSite(ch, c, r)
+
 	for {
-		for site := range r.RepoSiteInfo {
+		for site := range c.cacheName {
 			c.wg.Add(1)
-			site := site
-			go func(r *repository.UrlRepository, c *Cache) {
+			go func(r *repository.UrlRepository, c *Cache, site string) {
 				defer c.wg.Done()
 				start := time.Now()
-				resp, err := c.client.Get(fmt.Sprintf("https://%s", site))
-				if err != nil {
-					c.setSite(model.SiteResponseInfo{
-						SiteName:     site,
-						ResponseTime: time.Since(start).Milliseconds(),
-						Code:         http.StatusForbidden,
-					})
-					return
+				code := http.StatusForbidden
+				resp, err := c.client.Head(c.cacheName[site])
+				if err == nil {
+					code = resp.StatusCode
+					defer resp.Body.Close()
+					_, err = io.Copy(io.Discard, resp.Body)
+					if err != nil {
+						log.Warn(fmt.Sprintf("Error copying body: %v", err))
+					}
 				}
-				c.setSite(model.SiteResponseInfo{
+				ch <- model.SiteResponseInfo{
 					SiteName:     site,
 					ResponseTime: time.Since(start).Milliseconds(),
-					Code:         resp.StatusCode,
-				})
-
-				defer resp.Body.Close()
-				_, err = io.Copy(io.Discard, resp.Body)
-				if err != nil {
-					return
+					Code:         code,
 				}
-			}(r, c)
+			}(r, c, site)
 		}
 		c.wg.Wait()
-		c.checkMinMax()
-		c.swapData(r)
 		log.Info("data updated")
 		_ = <-c.tick.C
 	}
 }
 
-func Response(db *repository.UrlRepository, timeout, refresh int, log *zap.Logger) {
-	c := NewCheckResponse(timeout, refresh)
-	log.Debug("Starting CheckResponse...")
-	loopCheckSite(db, c, log)
-}
-
-func (c *Cache) setSite(m model.SiteResponseInfo) {
-	c.mu.Lock()
-	c.cacheSite[m.SiteName] = m
-	c.mu.Unlock()
-}
-
-func (c *Cache) swapData(r *repository.UrlRepository) {
-	r.RepoSiteInfo = c.cacheSite
-	r.RepoSiteMinMaxInfo = c.cacheMinMax
-}
-
-func (c *Cache) checkMinMax() {
-	var min, max int64
-	for key := range c.cacheSite {
-		if (c.cacheSite[key].ResponseTime < min || min == 0) && c.cacheSite[key].Code == http.StatusOK {
-			min = c.cacheSite[key].ResponseTime
-			c.cacheMinMax.MinName = key
+func SetSite(ch chan model.SiteResponseInfo, c *Cache, r *repository.UrlRepository) {
+	for {
+		cacheSite := make(map[string]model.SiteResponseInfo, len(c.cacheName))
+		for i := 0; i < len(c.cacheName); i++ {
+			m := <-ch
+			cacheSite[m.SiteName] = m
 		}
-		if (c.cacheSite[key].ResponseTime > max) && c.cacheSite[key].Code == http.StatusOK {
-			min = c.cacheSite[key].ResponseTime
-			c.cacheMinMax.MaxName = key
+		r.RepoSiteMinMaxInfo = c.checkMinMax(cacheSite)
+		r.RepoSiteInfo = cacheSite
+	}
+}
+
+func (c *Cache) checkMinMax(cacheSite map[string]model.SiteResponseInfo) model.SiteMinMaxInfo {
+	var min, max int64
+	var cacheMinMaxInfo model.SiteMinMaxInfo
+	for key := range cacheSite {
+		if (cacheSite[key].ResponseTime < min || min == 0) && cacheSite[key].Code == http.StatusOK {
+			min = cacheSite[key].ResponseTime
+			cacheMinMaxInfo.MinName = key
+		}
+		if (cacheSite[key].ResponseTime > max) && cacheSite[key].Code == http.StatusOK {
+			min = cacheSite[key].ResponseTime
+			cacheMinMaxInfo.MaxName = key
 		}
 	}
+	return cacheMinMaxInfo
 }
