@@ -11,10 +11,11 @@ import (
 	"time"
 )
 
-func StartServer(r *chi.Mux, log *zap.Logger, host, port string) {
+func StartServer(r *chi.Mux, log *zap.Logger, host string) {
 	log.Debug("Start app server")
+
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(host + ":" + port),
+		Addr:    host,
 		Handler: r,
 	}
 

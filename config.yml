@@ -3,8 +3,7 @@ workMode:
   authAdmin: no # no/jwt
 
 server:
-  host: 127.0.0.1
-  port: 8000
+  host_port: 127.0.0.1:8000
 
 url_repo:
   file: ../sites.txt

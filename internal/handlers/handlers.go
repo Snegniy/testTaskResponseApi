@@ -49,7 +49,6 @@ func (h *Handlers) GetSiteResponse(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeInfoJSON(w, res)
 	}
-	h.log.Debug(fmt.Sprintf("Get site %s response - OK!!", site))
 }
 
 func (h *Handlers) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +59,6 @@ func (h *Handlers) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeInfoJSON(w, res)
 	}
-	h.log.Debug("Get Min site response - OK!")
 }
 
 func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +69,6 @@ func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeInfoJSON(w, res)
 	}
-	h.log.Debug("Get Max site response - OK!")
 }
 
 func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +81,6 @@ func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeStatJSON(w, outputStat{site, res})
 	}
-	h.log.Debug(fmt.Sprintf("Get Stat count requests site %s for admin - OK!", site))
 }
 
 func (h *Handlers) GetMinStat(w http.ResponseWriter, r *http.Request) {

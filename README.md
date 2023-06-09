@@ -38,8 +38,6 @@ go build
 │   ├── handlers
 │   │   ├── writeJSON.go // отправка ответа в формате JSON
 │   │   ├── handlers.go // хэндлеры
-│   ├── middleware
-│   │   ├── jwtcheck.go // создание тестового токена для админов
 │   ├── model
 │   │   ├── model.go // структура хранения кэша с обработанными сайтами
 │   ├── repository
@@ -51,6 +49,8 @@ go build
 ├── pkg
 │   ├── graceful
 │   │   ├── server.go  // запуск graceful сервера
+│   ├── jwt
+│   │   ├── jwtcheck.go // создание тестового токена для админов
 │   ├── logger
 │   │   ├── logger.go // инициализация логгера
 ├── config.yml  // конфигурационные установки по умолчанию

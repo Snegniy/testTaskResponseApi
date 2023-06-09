@@ -12,8 +12,7 @@ type Config struct {
 		AuthAdmin string `yaml:"authAdmin" env-description:"Admin mode" env-default:"no"`
 	} `yaml:"workMode"`
 	Server struct {
-		Host string `yaml:"host" env-description:"Server host" env-default:"localhost"`
-		Port string `yaml:"port" env-description:"Server port" env-default:"8000"`
+		HostPort string `yaml:"host_port" env-description:"Server host" env-default:"localhost:8000"`
 	} `yaml:"server"`
 	UrlRepo struct {
 		SitesFile string `yaml:"file" env-description:"File with URL" env-default:"../sites.txt"`

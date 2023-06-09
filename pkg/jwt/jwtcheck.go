@@ -1,4 +1,4 @@
-package middleware
+package jwt
 
 import (
 	"github.com/go-chi/jwtauth/v5"
