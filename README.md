@@ -77,3 +77,21 @@ go build -o testapp
 
 #### /stat/max
 * `GET` : Получить статистику запросов по сайту с максимальным временем доступа (доступно без авторизации (по умолчанию) или через авторизацию JWT)
+
+## Performance
+wrk tests
+```
+Running 2m test @ http://127.0.0.1:8000/min
+12 threads and 400 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+Latency    74.75ms  110.91ms   1.45s    83.65%
+Req/Sec     5.62k     2.06k   21.60k    70.71%
+Latency Distribution
+50%    2.41ms
+75%  131.41ms
+90%  234.73ms
+99%  443.49ms
+7912090 requests in 2.00m, 1.22GB read
+Requests/sec:  65892.31
+Transfer/sec:     10.42MB
+```
