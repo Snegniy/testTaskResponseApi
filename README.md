@@ -82,16 +82,17 @@ go build -o testapp
 wrk tests
 ```
 Running 2m test @ http://127.0.0.1:8000/min
-  12 threads and 400 connections
+  12 threads and 1600 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     1.49ms    2.01ms 145.43ms   86.74%
-    Req/Sec    35.16k     5.09k   87.10k    69.63%
+    Latency     2.78ms    3.82ms  81.56ms   86.12%
+    Req/Sec    37.15k    13.11k   90.06k    65.04%
   Latency Distribution
-     50%  586.00us
-     75%    2.32ms
-     90%    4.00ms
-     99%    7.36ms
-  50428435 requests in 2.00m, 8.58GB read
-Requests/sec: 419890.76
-Transfer/sec:     73.18MB
+     50%  843.00us
+     75%    4.41ms
+     90%    7.98ms
+     99%   16.42ms
+  53237054 requests in 2.00m, 8.88GB read
+  Socket errors: connect 587, read 0, write 0, timeout 0
+Requests/sec: 443297.07
+Transfer/sec:     75.69MB
 ```
