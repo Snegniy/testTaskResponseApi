@@ -1,9 +1,9 @@
 package cronjob
 
 import (
-	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"github.com/Snegniy/testTaskResponseApi/internal/repository"
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -12,48 +12,37 @@ import (
 )
 
 type Cache struct {
-	cacheName map[string]string
-	tick      *time.Ticker
-	wg        sync.WaitGroup
-	client    http.Client
+	tick   *time.Ticker // убрать
+	client http.Client  // убрать
+	// список полных сайтов urls
 }
 
-func NewCheckResponse(timeout, refresh int, db *repository.UrlRepository) *Cache {
-	name := make(map[string]string, len(db.RepoSiteName))
-	for key := range db.RepoSiteName {
-		name[key] = fmt.Sprintf("https://%s", key)
+func Response(db *repository.UrlRepository, timeout, refresh int) {
+	c := &Cache{
+		tick:   time.NewTicker(time.Duration(refresh) * time.Second),
+		client: http.Client{Timeout: time.Duration(timeout) * time.Second},
 	}
-	return &Cache{
-		cacheName: name,
-		tick:      time.NewTicker(time.Duration(refresh) * time.Second),
-		client:    http.Client{Timeout: time.Duration(timeout) * time.Second},
-	}
+	logger.Debug("Starting CheckResponse...")
+	loopCheckSite(db, c)
 }
 
-func Response(db *repository.UrlRepository, timeout, refresh int, log *zap.Logger) {
-	c := NewCheckResponse(timeout, refresh, db)
-	log.Debug("Starting CheckResponse...")
-	loopCheckSite(db, c, log)
-}
-
-func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
+func loopCheckSite(r *repository.UrlRepository, c *Cache) {
 	for {
-		ch := make(chan model.SiteResponseInfo)
-		go SetSite(ch, c, r)
-
-		for site := range c.cacheName {
-			c.wg.Add(1)
-			go func(r *repository.UrlRepository, c *Cache, site string) {
-				defer c.wg.Done()
+		ch := make(chan model.SiteResponseInfo, len(r.RepoSiteName))
+		var wg sync.WaitGroup
+		for site := range r.RepoSiteName {
+			wg.Add(1)
+			go func(c *Cache, site string) {
+				defer wg.Done()
 				start := time.Now()
 				code := http.StatusForbidden
-				resp, err := c.client.Head(c.cacheName[site])
+				resp, err := c.client.Head("https://" + site)
 				if err == nil {
 					code = resp.StatusCode
 					defer resp.Body.Close()
 					_, err = io.Copy(io.Discard, resp.Body)
 					if err != nil {
-						log.Warn(fmt.Sprintf("Error copying body: %v", err))
+						logger.Warn("Error copying body", zap.Error(err))
 					}
 				}
 				ch <- model.SiteResponseInfo{
@@ -61,25 +50,18 @@ func loopCheckSite(r *repository.UrlRepository, c *Cache, log *zap.Logger) {
 					ResponseTime: time.Since(start).Milliseconds(),
 					Code:         code,
 				}
-			}(r, c, site)
+			}(c, site)
 		}
-		c.wg.Wait()
+		wg.Wait()
 		close(ch)
-		log.Info("data updated")
+		cacheSite := make(map[string]model.SiteResponseInfo, len(r.RepoSiteInfo))
+		for v := range ch {
+			cacheSite[v.SiteName] = v
+		}
+		r.UpdateData(cacheSite, c.checkMinMax(cacheSite))
+		logger.Info("data updated")
 		<-c.tick.C
 	}
-}
-
-func SetSite(ch chan model.SiteResponseInfo, c *Cache, r *repository.UrlRepository) {
-	cacheSite := make(map[string]model.SiteResponseInfo, len(c.cacheName))
-	for v := range ch {
-		fmt.Println(v)
-		cacheSite[v.SiteName] = v
-	}
-	fmt.Println(cacheSite)
-	r.RepoSiteMinMaxInfo = c.checkMinMax(cacheSite)
-	r.RepoSiteInfo = cacheSite
-
 }
 
 func (c *Cache) checkMinMax(cacheSite map[string]model.SiteResponseInfo) model.SiteMinMaxInfo {
@@ -91,7 +73,7 @@ func (c *Cache) checkMinMax(cacheSite map[string]model.SiteResponseInfo) model.S
 			cacheMinMaxInfo.MinName = key
 		}
 		if (cacheSite[key].ResponseTime > max) && cacheSite[key].Code == http.StatusOK {
-			min = cacheSite[key].ResponseTime
+			max = cacheSite[key].ResponseTime
 			cacheMinMaxInfo.MaxName = key
 		}
 	}

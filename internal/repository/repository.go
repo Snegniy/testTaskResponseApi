@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
-	"go.uber.org/zap"
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
@@ -16,22 +17,21 @@ type UrlRepository struct {
 	RepoSiteCount      []atomic.Uint64
 	RepoSiteMinMaxInfo model.SiteMinMaxInfo
 	RepoSiteMinMaxStat model.SiteMinMaxStat
-	log                *zap.Logger
+	mu                 sync.RWMutex
 }
 
-func NewRepository(log *zap.Logger, file string) *UrlRepository {
-	log.Debug("Register repository...")
-	log.Debug("Read sites list..")
+func NewRepository(file string) *UrlRepository {
+	logger.Debug("Register repository...")
+	logger.Debug("Read sites list..")
 	sitesInfo, sitesName, err := initData(file)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("%v", err))
+		logger.Fatal(fmt.Sprintf("%v", err))
 	}
 
 	return &UrlRepository{
 		RepoSiteInfo:  sitesInfo,
 		RepoSiteName:  sitesName,
 		RepoSiteCount: make([]atomic.Uint64, len(sitesName)),
-		log:           log,
 	}
 }
 
@@ -49,19 +49,17 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 		if v == "" {
 			continue
 		}
-		name := fmt.Sprintf("https://%s", v)
 		mInfo[v] = model.SiteResponseInfo{SiteName: v}
-		mName[name] = len(mName)
+		mName[v] = len(mName)
 	}
-	fmt.Println(mInfo)
-	fmt.Println(mName)
 	return mInfo, mName, nil
 }
 
 func (u *UrlRepository) ReadSiteInfo(s string) model.SiteResponseInfo {
-	u.log.Debug(fmt.Sprintf("Read site info %s from repository", s))
-
+	logger.Debug(fmt.Sprintf("Read site info %s from repository", s))
+	u.mu.RLock()
 	result, ok := u.RepoSiteInfo[s]
+	u.mu.RUnlock()
 	if !ok {
 		return model.SiteResponseInfo{
 			SiteName: s,
@@ -73,7 +71,7 @@ func (u *UrlRepository) ReadSiteInfo(s string) model.SiteResponseInfo {
 }
 
 func (u *UrlRepository) ReadMinResponseSite() model.SiteResponseInfo {
-	u.log.Debug("Read Min response site from repository")
+	logger.Debug("Read Min response site from repository")
 	key := u.RepoSiteMinMaxInfo.MinName
 	result := u.ReadSiteInfo(key)
 	u.WriteCountMinRequest()
@@ -81,7 +79,7 @@ func (u *UrlRepository) ReadMinResponseSite() model.SiteResponseInfo {
 }
 
 func (u *UrlRepository) ReadMaxResponseSite() model.SiteResponseInfo {
-	u.log.Debug("Read Max response site from repository")
+	logger.Debug("Read Max response site from repository")
 	key := u.RepoSiteMinMaxInfo.MaxName
 	result := u.ReadSiteInfo(key)
 	u.WriteCountMaxRequest()
@@ -89,7 +87,7 @@ func (u *UrlRepository) ReadMaxResponseSite() model.SiteResponseInfo {
 }
 
 func (u *UrlRepository) ReadCountSiteRequest(s string) (uint64, error) {
-	u.log.Debug(fmt.Sprintf("Read site count requests %s from repository", s))
+	logger.Debug(fmt.Sprintf("Read site count requests %s from repository", s))
 	key, ok := u.RepoSiteName[s]
 	if !ok {
 		return 0, errors.New("incorrect site requested")
@@ -98,28 +96,35 @@ func (u *UrlRepository) ReadCountSiteRequest(s string) (uint64, error) {
 }
 
 func (u *UrlRepository) ReadCountMinRequest() uint64 {
-	u.log.Debug("Read Max count request to repository")
+	logger.Debug("Read Max count request to repository")
 	return u.RepoSiteMinMaxStat.MinCount.Load()
 }
 
 func (u *UrlRepository) ReadCountMaxRequest() uint64 {
-	u.log.Debug("Read Max count request to repository")
+	logger.Debug("Read Max count request to repository")
 	return u.RepoSiteMinMaxStat.MaxCount.Load()
 }
 
 func (u *UrlRepository) WriteCountSiteRequest(s string) {
-	u.log.Debug(fmt.Sprintf("Write count site %s request to repository", s))
+	logger.Debug(fmt.Sprintf("Write count site %s request to repository", s))
 	if key, ok := u.RepoSiteName[s]; ok {
 		u.RepoSiteCount[key].Add(1)
 	}
 }
 
 func (u *UrlRepository) WriteCountMinRequest() {
-	u.log.Debug("Write Min count request to repository")
+	logger.Debug("Write Min count request to repository")
 	u.RepoSiteMinMaxStat.MinCount.Add(1)
 }
 
 func (u *UrlRepository) WriteCountMaxRequest() {
-	u.log.Debug("Write Max count request to repository")
+	logger.Debug("Write Max count request to repository")
 	u.RepoSiteMinMaxStat.MaxCount.Add(1)
+}
+
+func (u *UrlRepository) UpdateData(siteinfo map[string]model.SiteResponseInfo, minmax model.SiteMinMaxInfo) {
+	u.mu.Lock()
+	u.RepoSiteInfo = siteinfo
+	u.RepoSiteMinMaxInfo = minmax
+	u.mu.Unlock()
 }
