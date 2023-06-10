@@ -84,14 +84,14 @@ wrk tests
 Running 2m test @ http://127.0.0.1:8000/min
   12 threads and 400 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    69.80ms  104.97ms   1.32s    83.98%
-    Req/Sec     5.83k     2.18k   33.86k    70.22%
+    Latency     1.49ms    2.01ms 145.43ms   86.74%
+    Req/Sec    35.16k     5.09k   87.10k    69.63%
   Latency Distribution
-     50%    2.38ms
-     75%  120.22ms
-     90%  221.21ms
-     99%  424.08ms
-  8222947 requests in 2.00m, 1.26GB read
-Requests/sec:  68476.98
-Transfer/sec:     10.73MB
+     50%  586.00us
+     75%    2.32ms
+     90%    4.00ms
+     99%    7.36ms
+  50428435 requests in 2.00m, 8.58GB read
+Requests/sec: 419890.76
+Transfer/sec:     73.18MB
 ```
