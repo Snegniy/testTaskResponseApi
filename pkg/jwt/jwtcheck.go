@@ -1,13 +1,14 @@
 package jwt
 
 import (
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"github.com/go-chi/jwtauth/v5"
-	"log"
+	"go.uber.org/zap"
 )
 
 func NewJWT() *jwtauth.JWTAuth {
 	tokenAuth := jwtauth.New("HS256", []byte("june2023"), nil)
 	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"user_id": 123})
-	log.Printf("\t\twarning: test jwt is: %s\n", tokenString)
+	logger.Info("test jwt", zap.String("token", tokenString))
 	return tokenAuth
 }

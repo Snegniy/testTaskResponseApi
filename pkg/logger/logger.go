@@ -8,10 +8,8 @@ import (
 
 var log *zap.Logger
 
-func NewLogger(mode string) *zap.Logger {
+func Init(mode string) {
 	log = configLogger(mode)
-	log.Debug("Get logger - OK!")
-	return log
 }
 
 func configLogger(mode string) *zap.Logger {
@@ -27,4 +25,24 @@ func configLogger(mode string) *zap.Logger {
 	)
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	return logger
+}
+
+func Debug(msg string, fields ...zap.Field) {
+	log.Debug(msg, fields...)
+}
+
+func Info(msg string, fields ...zap.Field) {
+	log.Info(msg, fields...)
+}
+
+func Error(msg string, fields ...zap.Field) {
+	log.Error(msg, fields...)
+}
+
+func Warn(msg string, fields ...zap.Field) {
+	log.Warn(msg, fields...)
+}
+
+func Fatal(msg string, fields ...zap.Field) {
+	log.Fatal(msg, fields...)
 }

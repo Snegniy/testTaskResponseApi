@@ -2,9 +2,9 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
+	"go.uber.org/zap"
 	"os"
 	"strings"
 	"sync"
@@ -25,7 +25,7 @@ func NewRepository(file string) *UrlRepository {
 	logger.Debug("Read sites list..")
 	sitesInfo, sitesName, err := initData(file)
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("%v", err))
+		logger.Fatal("Sites load error", zap.Error(err))
 	}
 
 	return &UrlRepository{
@@ -41,7 +41,7 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 		return nil, nil, err
 	}
 
-	list := strings.Split(string(b), "\r\n") // win - \r\n ; unix - \n ; mac - \r
+	list := strings.Split(string(b), "\r\n")
 	mInfo := make(map[string]model.SiteResponseInfo, len(list))
 	mName := make(map[string]int, len(list))
 
@@ -56,7 +56,7 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 }
 
 func (u *UrlRepository) ReadSiteInfo(s string) model.SiteResponseInfo {
-	logger.Debug(fmt.Sprintf("Read site info %s from repository", s))
+	logger.Debug("Read site info from repository", zap.String("site", s))
 	u.mu.RLock()
 	result, ok := u.RepoSiteInfo[s]
 	u.mu.RUnlock()
@@ -87,7 +87,7 @@ func (u *UrlRepository) ReadMaxResponseSite() model.SiteResponseInfo {
 }
 
 func (u *UrlRepository) ReadCountSiteRequest(s string) (uint64, error) {
-	logger.Debug(fmt.Sprintf("Read site count requests %s from repository", s))
+	logger.Debug("Read site count requests from repository", zap.String("site", s))
 	key, ok := u.RepoSiteName[s]
 	if !ok {
 		return 0, errors.New("incorrect site requested")
@@ -96,7 +96,7 @@ func (u *UrlRepository) ReadCountSiteRequest(s string) (uint64, error) {
 }
 
 func (u *UrlRepository) ReadCountMinRequest() uint64 {
-	logger.Debug("Read Max count request to repository")
+	logger.Debug("Read Min count request to repository")
 	return u.RepoSiteMinMaxStat.MinCount.Load()
 }
 
@@ -106,7 +106,7 @@ func (u *UrlRepository) ReadCountMaxRequest() uint64 {
 }
 
 func (u *UrlRepository) WriteCountSiteRequest(s string) {
-	logger.Debug(fmt.Sprintf("Write count site %s request to repository", s))
+	logger.Debug("Write site count requests from repository", zap.String("site", s))
 	if key, ok := u.RepoSiteName[s]; ok {
 		u.RepoSiteCount[key].Add(1)
 	}
@@ -127,4 +127,5 @@ func (u *UrlRepository) UpdateData(siteinfo map[string]model.SiteResponseInfo, m
 	u.RepoSiteInfo = siteinfo
 	u.RepoSiteMinMaxInfo = minmax
 	u.mu.Unlock()
+	logger.Info("data updated")
 }

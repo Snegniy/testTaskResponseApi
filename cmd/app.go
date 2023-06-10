@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Snegniy/testTaskResponseApi/internal/config"
+	"github.com/Snegniy/testTaskResponseApi/internal/cronjob"
 	"github.com/Snegniy/testTaskResponseApi/internal/handlers"
 	"github.com/Snegniy/testTaskResponseApi/internal/repository"
 	"github.com/Snegniy/testTaskResponseApi/internal/service"
@@ -14,18 +15,18 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	log := logger.NewLogger(cfg.ModeWork.IsDebug)
+	logger.Init(cfg.ModeWork.IsDebug)
 
-	log.Debug("Create router...")
+	logger.Debug("Create router...")
 	router := chi.NewRouter()
 
-	r := repository.NewRepository(log, cfg.UrlRepo.SitesFile)
-	s := service.NewService(log, r)
-	h := handlers.NewHandlers(log, s)
+	r := repository.NewRepository(cfg.UrlRepo.SitesFile)
+	s := service.NewService(r)
+	h := handlers.NewHandlers(s)
 
 	Register(router, h, cfg.ModeWork.AuthAdmin)
-	//go cronjob.Response(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh, log)
-	graceful.StartServer(router, log, cfg.Server.HostPort)
+	go cronjob.SiteCheckResponse(r, cfg.UrlRepo.Timeout, cfg.UrlRepo.Refresh)
+	graceful.StartServer(router, cfg.Server.HostPort)
 }
 
 func Register(router *chi.Mux, h handlers.Handlers, auth string) {

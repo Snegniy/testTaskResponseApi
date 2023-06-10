@@ -21,8 +21,8 @@ go get github.com/Snegniy/testTaskResponseApi
 ```bash
 # Build and Run
 cd testTaskResponseApi
-go build
-./testTaskResponseApi
+go build -o testapp
+./testapp
 
 # API Endpoint : http://127.0.0.1:8000
 # Test JWT : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMjN9._FCTegWdDGIUkKF6vz8ikeiuUi9r0lOxurginXhY9fQ

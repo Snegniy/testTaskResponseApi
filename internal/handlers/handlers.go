@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/service"
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 type Handlers struct {
-	log *zap.Logger
 	srv Services
 }
 
@@ -22,49 +21,47 @@ type Services interface {
 	GetMaxStat() service.OutputAdminInfo
 }
 
-func NewHandlers(log *zap.Logger, s Services) Handlers {
-	log.Debug("Register user handler...")
+func NewHandlers(s Services) Handlers {
+	logger.Debug("Register user handler...")
 	return Handlers{
-		log: log,
 		srv: s,
 	}
 }
 
 func (h *Handlers) GetSiteResponse(w http.ResponseWriter, r *http.Request) {
 	site := chi.URLParam(r, "site")
-	h.log.Debug(fmt.Sprintf("Get site %s response...", site))
+	logger.Debug("Handler call", zap.String("site", site))
 	res := h.srv.GetSiteInfo(site)
 	writeJSON(w, res)
 }
 
 func (h *Handlers) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Min site response...")
+	logger.Debug("Handler call", zap.String("min", "min"))
 	res := h.srv.GetSiteMinResponse()
 	writeJSON(w, res)
 }
 
 func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Max site response...")
+	logger.Debug("Handler call", zap.String("max", "max"))
 	res := h.srv.GetSiteMaxResponse()
 	writeJSON(w, res)
 }
 
 func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
-	//_, claims, _ := jwtauth.FromContext(r.Context())
 	site := chi.URLParam(r, "site")
-	h.log.Debug(fmt.Sprintf("Get Stat count requests site %s for admin...", site))
+	logger.Debug("Handler call", zap.String("admin site stat", site))
 	res := h.srv.GetSiteStat(site)
 	writeJSON(w, res)
 }
 
 func (h *Handlers) GetMinStat(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Min response count stat for admin...")
+	logger.Debug("Handler call", zap.String("admin min stat", "min"))
 	res := h.srv.GetMinStat()
 	writeJSON(w, res)
 }
 
 func (h *Handlers) GetMaxStat(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug("Get Max response count stat for admin...")
+	logger.Debug("Handler call", zap.String("admin max stat", "max"))
 	res := h.srv.GetMaxStat()
 	writeJSON(w, res)
 }

@@ -2,7 +2,7 @@ package graceful
 
 import (
 	"context"
-	"fmt"
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 	"net/http"
@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-func StartServer(r *chi.Mux, log *zap.Logger, host string) {
-	log.Debug("Start app server")
+func StartServer(r *chi.Mux, host string) {
+	logger.Debug("Start app server")
 
 	srv := &http.Server{
 		Addr:    host,
@@ -20,22 +20,21 @@ func StartServer(r *chi.Mux, log *zap.Logger, host string) {
 	}
 
 	go func() {
-		log.Info(fmt.Sprintf("Server started on %s", srv.Addr))
+		logger.Info("Server started", zap.String("host:port", host))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal(fmt.Sprintf("listen: %s\n", err))
+			logger.Fatal("listen:", zap.Error(err))
 		}
 	}()
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
-	log.Info("Shutdown Server ...")
+	logger.Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal(fmt.Sprintf("Server Shutdown: %s", err))
+		logger.Fatal("Server Shutdown", zap.Error(err))
 	}
-
-	log.Info("Server exiting")
+	logger.Info("Server exiting")
 }

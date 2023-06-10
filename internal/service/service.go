@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
+	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"go.uber.org/zap"
 	"strconv"
 )
 
 type Service struct {
-	log  *zap.Logger
 	repo Repository
 }
 
@@ -41,15 +41,15 @@ type Repository interface {
 	ReadCountMinRequest() uint64
 }
 
-func NewService(log *zap.Logger, r Repository) *Service {
-	log.Debug("Register service...")
+func NewService(r Repository) *Service {
+	logger.Debug("Register service...")
 	return &Service{
-		log:  log,
 		repo: r,
 	}
 }
 
 func NewOutputUserInfo(m model.SiteResponseInfo) OutputUserInfo {
+	logger.Debug("Create new output user info...", zap.String("site", m.SiteName))
 	out := OutputUserInfo{
 		RequestName: m.SiteName,
 	}
@@ -63,33 +63,32 @@ func NewOutputUserInfo(m model.SiteResponseInfo) OutputUserInfo {
 		out.ResponseTime = fmt.Sprintf("%v", siteNotConnect)
 	}
 	if m.Code == codeOK {
-		t := strconv.Itoa(m.Code)
+		t := strconv.Itoa(int(m.ResponseTime))
 		out.ResponseTime = fmt.Sprintf("%sms", t)
 	}
 	return out
 }
 
 func (s Service) GetSiteInfo(site string) OutputUserInfo {
-	s.log.Debug("Get site response...")
+	logger.Debug("Get site response...")
 	result := s.repo.ReadSiteInfo(site)
 	return NewOutputUserInfo(result)
 }
 
 func (s Service) GetSiteMinResponse() OutputUserInfo {
-	s.log.Debug("Get Min site response...")
+	logger.Debug("Get Min site response...")
 	result := s.repo.ReadMinResponseSite()
 	return NewOutputUserInfo(result)
 }
 
 func (s Service) GetSiteMaxResponse() OutputUserInfo {
-	s.log.Debug("Get Max site response...")
+	logger.Debug("Get Max site response...")
 	result := s.repo.ReadMaxResponseSite()
 	return NewOutputUserInfo(result)
 }
 
 func (s Service) GetSiteStat(site string) OutputAdminInfo {
-	s.log.Debug(fmt.Sprintf("Get site %s stat...", site))
-
+	logger.Debug("Get site stat...", zap.String("site", site))
 	result, err := s.repo.ReadCountSiteRequest(site)
 	c := strconv.Itoa(int(result))
 	out := OutputAdminInfo{
@@ -103,8 +102,7 @@ func (s Service) GetSiteStat(site string) OutputAdminInfo {
 }
 
 func (s Service) GetMinStat() OutputAdminInfo {
-	s.log.Debug("Get Min site stat...")
-
+	logger.Debug("Get Min site stat...")
 	return OutputAdminInfo{
 		RequestName:  "Min response Endpoint requests",
 		RequestCount: strconv.Itoa(int(s.repo.ReadCountMinRequest())),
@@ -112,7 +110,7 @@ func (s Service) GetMinStat() OutputAdminInfo {
 }
 
 func (s Service) GetMaxStat() OutputAdminInfo {
-	s.log.Debug("Get Max site stat...")
+	logger.Debug("Get Max site stat...")
 	return OutputAdminInfo{
 		RequestName:  "Max response Endpoint requests",
 		RequestCount: strconv.Itoa(int(s.repo.ReadCountMaxRequest())),
