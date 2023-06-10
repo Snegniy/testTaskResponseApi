@@ -72,7 +72,9 @@ func (u *UrlRepository) ReadSiteInfo(s string) model.SiteResponseInfo {
 
 func (u *UrlRepository) ReadMinResponseSite() model.SiteResponseInfo {
 	logger.Debug("Read Min response site from repository")
+	u.mu.RLock()
 	key := u.RepoSiteMinMaxInfo.MinName
+	u.mu.RUnlock()
 	result := u.ReadSiteInfo(key)
 	u.WriteCountMinRequest()
 	return result
@@ -80,7 +82,9 @@ func (u *UrlRepository) ReadMinResponseSite() model.SiteResponseInfo {
 
 func (u *UrlRepository) ReadMaxResponseSite() model.SiteResponseInfo {
 	logger.Debug("Read Max response site from repository")
+	u.mu.RLock()
 	key := u.RepoSiteMinMaxInfo.MaxName
+	u.mu.RUnlock()
 	result := u.ReadSiteInfo(key)
 	u.WriteCountMaxRequest()
 	return result
