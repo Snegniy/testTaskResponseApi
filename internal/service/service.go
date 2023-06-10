@@ -6,7 +6,6 @@ import (
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
 	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"go.uber.org/zap"
-	"strconv"
 )
 
 type Service struct {
@@ -15,18 +14,21 @@ type Service struct {
 
 type OutputUserInfo struct {
 	RequestName  string `json:"request_name"`
-	ResponseTime string `json:"response_time"`
+	ResponseTime int64  `json:"response_time(ms),omitempty"`
+	Error        string `json:"error,omitempty"`
 }
 
 type OutputAdminInfo struct {
 	RequestName  string `json:"request_name"`
-	RequestCount string `json:"request_count"`
+	RequestCount uint64 `json:"request_count,omitempty"`
+	Error        string `json:"error,omitempty"`
 }
 
 var (
-	siteNotLoad        = errors.New("error: site data not loaded. Please wait")
-	siteNotConnect     = errors.New("error: site is unavailable")
-	siteNameNotCorrect = errors.New("error: incorrect site requested")
+	siteNotLoad        = errors.New("site data not loaded. Please wait")
+	siteNotConnect     = errors.New("site is unavailable")
+	siteNameNotCorrect = errors.New("incorrect site requested")
+	notCountRequested  = errors.New("not requested this site")
 	codeNotCorrectSite = -1
 	codeNotLoad        = 0
 	codeOK             = 200
@@ -53,18 +55,17 @@ func NewOutputUserInfo(m model.SiteResponseInfo) OutputUserInfo {
 	out := OutputUserInfo{
 		RequestName: m.SiteName,
 	}
-	if m.Code == codeNotCorrectSite {
-		out.ResponseTime = fmt.Sprintf("%v", siteNameNotCorrect)
+	if m.SiteName == "" || m.Code == codeNotLoad {
+		out.Error = fmt.Sprintf("%v", siteNotLoad)
 	}
-	if m.Code == codeNotLoad {
-		out.ResponseTime = fmt.Sprintf("%v", siteNotLoad)
+	if m.Code == codeNotCorrectSite && m.SiteName != "" {
+		out.Error = fmt.Sprintf("%v", siteNameNotCorrect)
 	}
 	if m.Code > 0 && m.Code != codeOK {
-		out.ResponseTime = fmt.Sprintf("%v", siteNotConnect)
+		out.Error = fmt.Sprintf("%v", siteNotConnect)
 	}
 	if m.Code == codeOK {
-		t := strconv.Itoa(int(m.ResponseTime))
-		out.ResponseTime = fmt.Sprintf("%sms", t)
+		out.ResponseTime = m.ResponseTime
 	}
 	return out
 }
@@ -90,29 +91,43 @@ func (s Service) GetSiteMaxResponse() OutputUserInfo {
 func (s Service) GetSiteStat(site string) OutputAdminInfo {
 	logger.Debug("Get site stat...", zap.String("site", site))
 	result, err := s.repo.ReadCountSiteRequest(site)
-	c := strconv.Itoa(int(result))
 	out := OutputAdminInfo{
-		RequestName:  site,
-		RequestCount: c,
+		RequestName: site,
 	}
 	if err != nil {
-		out.RequestCount = fmt.Sprintf("%v", siteNameNotCorrect)
+		out.Error = fmt.Sprintf("%v", siteNameNotCorrect)
+	}
+	if err == nil && result != 0 {
+		out.RequestCount = result
+	}
+	if err == nil && result == 0 {
+		out.Error = fmt.Sprintf("%v", notCountRequested)
 	}
 	return out
 }
 
 func (s Service) GetMinStat() OutputAdminInfo {
 	logger.Debug("Get Min site stat...")
-	return OutputAdminInfo{
-		RequestName:  "Min response Endpoint requests",
-		RequestCount: strconv.Itoa(int(s.repo.ReadCountMinRequest())),
+	res := OutputAdminInfo{
+		RequestName: "Min response Endpoint requests"}
+	count := s.repo.ReadCountMinRequest()
+	if count == 0 {
+		res.Error = fmt.Sprintf("%v", notCountRequested)
+	} else {
+		res.RequestCount = count
 	}
+	return res
 }
 
 func (s Service) GetMaxStat() OutputAdminInfo {
 	logger.Debug("Get Max site stat...")
-	return OutputAdminInfo{
-		RequestName:  "Max response Endpoint requests",
-		RequestCount: strconv.Itoa(int(s.repo.ReadCountMaxRequest())),
+	res := OutputAdminInfo{
+		RequestName: "Max response Endpoint requests"}
+	count := s.repo.ReadCountMinRequest()
+	if count == 0 {
+		res.Error = fmt.Sprintf("%v", notCountRequested)
+	} else {
+		res.RequestCount = count
 	}
+	return res
 }

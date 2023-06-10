@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func writeJSON[T any](w http.ResponseWriter, info T) {
+func writeJSON(w http.ResponseWriter, info interface{}) {
 	response, err := json.Marshal(info)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
