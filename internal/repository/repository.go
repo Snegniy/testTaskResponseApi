@@ -134,7 +134,7 @@ func (u *UrlRepository) UpdateData(site map[string]model.SiteResponseInfo, minma
 	logger.Info("data updated")
 }
 
-func (u *UrlRepository) GetSiteList() map[string]int {
+func (u *UrlRepository) GetSiteNames() map[string]int {
 	logger.Debug("Get site list from repository")
 	return u.RepoSiteName
 }

@@ -12,7 +12,7 @@ import (
 
 type Updater interface {
 	UpdateData(site map[string]model.SiteResponseInfo, minmax model.SiteMinMaxInfo)
-	GetSiteList() map[string]int
+	GetSiteNames() map[string]int
 }
 
 func SiteCheckResponse(db Updater, timeout, refresh int) {
@@ -20,7 +20,7 @@ func SiteCheckResponse(db Updater, timeout, refresh int) {
 
 	for {
 		var wg sync.WaitGroup
-		names := db.GetSiteList()
+		names := db.GetSiteNames()
 		ch := make(chan model.SiteResponseInfo, len(names))
 		ticker := time.NewTicker(time.Duration(refresh) * time.Second)
 		client := http.Client{Timeout: time.Duration(timeout) * time.Second}
