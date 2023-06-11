@@ -28,7 +28,7 @@ func SiteCheckResponse(db Updater, timeout, refresh int) {
 		for site := range names {
 			wg.Add(1)
 
-			go func(wg *sync.WaitGroup, ticker time.Ticker, client http.Client, site string) {
+			go func(site string) {
 				defer wg.Done()
 				start := time.Now()
 				code := http.StatusForbidden
@@ -47,7 +47,7 @@ func SiteCheckResponse(db Updater, timeout, refresh int) {
 					ResponseTime: time.Since(start).Milliseconds(),
 					Code:         code,
 				}
-			}(&wg, *ticker, client, site)
+			}(site)
 		}
 		wg.Wait()
 		close(ch)
