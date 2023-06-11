@@ -126,10 +126,15 @@ func (u *UrlRepository) WriteCountMaxRequest() {
 	u.RepoSiteMinMaxStat.MaxCount.Add(1)
 }
 
-func (u *UrlRepository) UpdateData(siteinfo map[string]model.SiteResponseInfo, minmax model.SiteMinMaxInfo) {
+func (u *UrlRepository) UpdateData(site map[string]model.SiteResponseInfo, minmax model.SiteMinMaxInfo) {
 	u.mu.Lock()
-	u.RepoSiteInfo = siteinfo
+	u.RepoSiteInfo = site
 	u.RepoSiteMinMaxInfo = minmax
 	u.mu.Unlock()
 	logger.Info("data updated")
+}
+
+func (u *UrlRepository) GetSiteList() map[string]int {
+	logger.Debug("Get site list from repository")
+	return u.RepoSiteName
 }

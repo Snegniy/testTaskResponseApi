@@ -2,7 +2,6 @@ package cronjob
 
 import (
 	"github.com/Snegniy/testTaskResponseApi/internal/model"
-	"github.com/Snegniy/testTaskResponseApi/internal/repository"
 	"github.com/Snegniy/testTaskResponseApi/pkg/logger"
 	"go.uber.org/zap"
 	"io"
@@ -11,15 +10,22 @@ import (
 	"time"
 )
 
-func SiteCheckResponse(db *repository.UrlRepository, timeout, refresh int) {
+type Updater interface {
+	UpdateData(site map[string]model.SiteResponseInfo, minmax model.SiteMinMaxInfo)
+	GetSiteList() map[string]int
+}
+
+func SiteCheckResponse(db Updater, timeout, refresh int) {
 	logger.Debug("Starting CheckResponse...")
+
 	for {
 		var wg sync.WaitGroup
-		ch := make(chan model.SiteResponseInfo, len(db.RepoSiteName))
+		names := db.GetSiteList()
+		ch := make(chan model.SiteResponseInfo, len(names))
 		ticker := time.NewTicker(time.Duration(refresh) * time.Second)
 		client := http.Client{Timeout: time.Duration(timeout) * time.Second}
 
-		for site := range db.RepoSiteName {
+		for site := range names {
 			wg.Add(1)
 
 			go func(wg *sync.WaitGroup, ticker time.Ticker, client http.Client, site string) {
@@ -45,7 +51,7 @@ func SiteCheckResponse(db *repository.UrlRepository, timeout, refresh int) {
 		}
 		wg.Wait()
 		close(ch)
-		cacheSite := make(map[string]model.SiteResponseInfo, len(db.RepoSiteInfo))
+		cacheSite := make(map[string]model.SiteResponseInfo, len(names))
 		for v := range ch {
 			cacheSite[v.SiteName] = v
 		}
