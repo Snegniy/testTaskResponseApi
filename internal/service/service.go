@@ -123,7 +123,7 @@ func (s Service) GetMaxStat() OutputAdminInfo {
 	logger.Debug("Get Max site stat...")
 	res := OutputAdminInfo{
 		RequestName: "Max response Endpoint requests"}
-	count := s.repo.ReadCountMinRequest()
+	count := s.repo.ReadCountMaxRequest()
 	if count == 0 {
 		res.Error = fmt.Sprintf("%v", notCountRequested)
 	} else {

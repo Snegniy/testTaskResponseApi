@@ -32,36 +32,36 @@ func (h *Handlers) GetSiteResponse(w http.ResponseWriter, r *http.Request) {
 	site := chi.URLParam(r, "site")
 	logger.Debug("Handler call", zap.String("site", site))
 	res := h.srv.GetSiteInfo(site)
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
 
 func (h *Handlers) GetMinSiteResponse(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Handler call", zap.String("min", "min"))
 	res := h.srv.GetSiteMinResponse()
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
 
 func (h *Handlers) GetMaxSiteResponse(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Handler call", zap.String("max", "max"))
 	res := h.srv.GetSiteMaxResponse()
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
 
 func (h *Handlers) GetSiteStat(w http.ResponseWriter, r *http.Request) {
 	site := chi.URLParam(r, "site")
 	logger.Debug("Handler call", zap.String("admin site stat", site))
 	res := h.srv.GetSiteStat(site)
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
 
 func (h *Handlers) GetMinStat(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Handler call", zap.String("admin min stat", "min"))
 	res := h.srv.GetMinStat()
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
 
 func (h *Handlers) GetMaxStat(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Handler call", zap.String("admin max stat", "max"))
 	res := h.srv.GetMaxStat()
-	writeJSON(w, res)
+	_ = writeJSON(w, res)
 }
