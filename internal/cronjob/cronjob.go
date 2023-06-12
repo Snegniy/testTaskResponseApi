@@ -17,14 +17,12 @@ type Updater interface {
 
 func SiteCheckResponse(db Updater, timeout, refresh int) {
 	logger.Debug("Starting CheckResponse...")
-
+	ticker := time.NewTicker(time.Duration(refresh) * time.Second)
+	client := http.Client{Timeout: time.Duration(timeout) * time.Second}
+	names := db.GetSiteNames()
 	for {
 		var wg sync.WaitGroup
-		names := db.GetSiteNames()
 		ch := make(chan model.SiteResponseInfo, len(names))
-		ticker := time.NewTicker(time.Duration(refresh) * time.Second)
-		client := http.Client{Timeout: time.Duration(timeout) * time.Second}
-
 		for site := range names {
 			wg.Add(1)
 

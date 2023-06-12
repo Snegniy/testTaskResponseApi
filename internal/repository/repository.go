@@ -41,7 +41,7 @@ func initData(file string) (map[string]model.SiteResponseInfo, map[string]int, e
 		return nil, nil, err
 	}
 
-	list := strings.Split(string(b), "\r\n")
+	list := strings.Split(string(b), "\n")
 	mInfo := make(map[string]model.SiteResponseInfo, len(list))
 	mName := make(map[string]int, len(list))
 
