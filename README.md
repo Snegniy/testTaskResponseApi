@@ -14,13 +14,13 @@
 ## Installation & Run
 ```bash
 # Download this project
-go get github.com/Snegniy/testTaskResponseApi
+go get github.com/Snegniy/testTaskResponseApi/cmd
 ```
 
 
 ```bash
 # Build and Run
-cd testTaskResponseApi
+cd github.com/Snegniy/testTaskResponseApi/cmd
 go build -o testapp
 ./testapp
 
